@@ -14,8 +14,9 @@
     "isolatedModules": true,
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "types": ["node", "jest"],
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "src/tests/**/*"],
   "exclude": ["node_modules", "dist"]
 }
