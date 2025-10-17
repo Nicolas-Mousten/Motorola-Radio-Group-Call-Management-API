@@ -17,12 +17,11 @@ describe("Floor API", () => {
   });
 
   it("should prevent a lower priority user from taking the floor", async () => {
-    // First, user1 gets the floor
     await request(app).post('/groups/group1/floor').send({ userId: "user1", priority: 2 });
 
     const res = await request(app)
       .post('/groups/group1/floor')
-      .send({ userId: "user2", priority: 1 }); // lower priority
+      .send({ userId: "user2", priority: 1 }); 
 
     expect(res.status).toBe(409);
     expect(res.body.message).toMatch(/Floor is currently held by user1/);
@@ -33,7 +32,7 @@ describe("Floor API", () => {
 
     const res = await request(app)
       .post('/groups/group1/floor')
-      .send({ userId: "user2", priority: 5 }); // higher priority
+      .send({ userId: "user2", priority: 5 }); 
 
     expect(res.status).toBe(200);
     expect(res.body.message).toMatch(/Floor preempted/);

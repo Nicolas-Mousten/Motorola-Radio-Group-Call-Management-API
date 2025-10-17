@@ -1,0 +1,11 @@
+version: "3.9"
+
+services:
+  api:
+    build: .
+    container_name: motorola_api
+    ports:
+      - "8080:8080"
+    environment:
+      NODE_ENV: production
+
