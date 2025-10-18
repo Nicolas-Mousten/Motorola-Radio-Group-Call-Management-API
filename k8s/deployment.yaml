@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: motorola-api
+  labels:
+    app: motorola-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: motorola-api
+  template:
+    metadata:
+      labels:
+        app: motorola-api
+    spec:
+      containers:
+        - name: motorola-api
+          image: motorola-radio-group-call-management-api-api:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          env:
+            - name: NODE_ENV
+              value: "production"
