@@ -18,8 +18,8 @@ class FloorService {
         const { userId, priority = 1 } = user;
         const currentFloor = this.floors.get(groupId);
 
+        // If the floor is free
         if (!currentFloor) {
-            // Floor is free, grant it
             this.floors.set(groupId, { userId, priority });
             this.logAudit(groupId, { userId, action: "obtained", timestamp: new Date().toISOString() });
             this.floorTimer(groupId, userId, TimeToExpire);
@@ -29,18 +29,17 @@ class FloorService {
             };
         }
 
+        // If the user already holds the floor
         if (currentFloor.userId === userId) {
-            // Already holds the floor
             return {
                 status: "ok",
                 message: `You already hold the floor for group ${groupId}`
             };
         }
 
+        // If the level of priority is higher than the current holder
         if (priority > (currentFloor.priority ?? 1) ) {
-            // New request has higher priority → preempt current holder
             this.floors.set(groupId, { userId, priority });
-            //console.log(`Floor preempted: ${userId} replaced ${currentFloor.userId} on group ${groupId}`);
             this.logAudit(groupId, { userId, action: "preempted", timestamp: new Date().toISOString() });
             this.floorTimer(groupId, userId, TimeToExpire);
             return {
@@ -87,6 +86,12 @@ class FloorService {
         return current ? current.userId : null;
     }
 
+    async getAudit(groupId: string): Promise<FloorAuditEntry[]> {
+        return this.auditLog.get(groupId) || [];
+    }
+
+    // Support functions:
+
     async floorTimer(groupId: string, userId: string, duration: number) {
         const existingTimer = this.timers.get(groupId);
         if (existingTimer) {
@@ -113,9 +118,7 @@ class FloorService {
         this.auditLog.get(groupId)!.push(entry);
     }
 
-    async getAudit(groupId: string): Promise<FloorAuditEntry[]> {
-        return this.auditLog.get(groupId) || [];
-    }
+    
 
 }
 
