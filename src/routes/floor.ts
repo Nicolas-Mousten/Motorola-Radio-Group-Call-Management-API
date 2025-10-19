@@ -1,14 +1,9 @@
 import { Router } from 'express';
-import { z } from 'zod';
 import { floorService } from '../services/floorService.js';
+import { userRequestSchema, type UserRequest } from '../schemas/userRequestSchema.js';
+import { groupParamsSchema, groupUserParamsSchema } from '../schemas/groupParamsSchema.js';
 
 const router = Router();
-
-const userRequestSchema = z.object({
-    userId: z.string().min(1, "userID is required"),
-    priority: z.number().max(5).min(1).optional()
-});
-
 
 /**
  * @summary Obtain the current floor occupant
@@ -22,7 +17,11 @@ const userRequestSchema = z.object({
  * @returns {object} - JSON object containing the userId of the current floor occupant or a 404 if unoccupied.
  */
 router.get('/:groupId/floor/occupant', async (req, res) => {
-    const { groupId } = req.params;
+    const parsedParams = groupParamsSchema.safeParse(req.params);
+    if (!parsedParams.success) {
+        return res.status(400).json({ message: "Invalid request: groupId is required" });
+    }
+    const { groupId } = parsedParams.data;
 
 
     const occupant = await floorService.getCurrentOccupant(groupId);
@@ -48,22 +47,26 @@ router.get('/:groupId/floor/occupant', async (req, res) => {
  * @returns {object} - JSON object indicating success or conflict status with appropriate messages.
  */
 router.post('/:groupId/floor', async (req, res) => {
-    const { groupId } = req.params;
-    const parsed = userRequestSchema.safeParse(req.body);
-
-
-    if (!parsed.success) {
-        return res.status(400).json({ message: "Invalid request: userId is required" });
+    const parsedParams = groupParamsSchema.safeParse(req.params);
+    if (!parsedParams.success) {
+        return res.status(400).json({ message: "Invalid request: groupId is required" });
     }
+    const { groupId } = parsedParams.data;
 
-    const { userId, priority } = parsed.data;
-    const result = await floorService.obtainFloor(groupId, userId, priority);
+    const parsedBody = userRequestSchema.safeParse(req.body);
+    if (!parsedBody.success) {
+        return res.status(400).json({ message: "Invalid request: userId is required and priority must be 1-5 if provided" });
+    }
+    const userReq: UserRequest = parsedBody.data;
+
+    const result = await floorService.obtainFloor(groupId, userReq);
 
     if (result.status === "ok") {
         return res.json({ message: result.message });
     } else if (result.status === "conflict") {
         return res.status(409).json({ message: result.message });
     }
+    return res.status(500).json({ message: "Unexpected error" });
 });
 
 /**
@@ -79,7 +82,11 @@ router.post('/:groupId/floor', async (req, res) => {
  * @return {object} - JSON object indicating success or forbidden status with appropriate messages.
  */
 router.delete("/:groupId/floor/:userId", async (req, res) => {
-    const { groupId, userId } = req.params;
+    const parsedParams = groupUserParamsSchema.safeParse(req.params);
+    if (!parsedParams.success) {
+        return res.status(400).json({ message: "Invalid request: groupId and userId are required" });
+    }
+    const { groupId, userId } = parsedParams.data;
 
 
     const result = await floorService.releaseFloor(groupId, userId);
@@ -103,7 +110,12 @@ router.delete("/:groupId/floor/:userId", async (req, res) => {
  * @returns {object} - JSON object containing the audit log entries for the group.
  */
 router.get('/:groupId/floor/audit', async (req, res) => {
-    const { groupId } = req.params;
+    const parsedParams = groupParamsSchema.safeParse(req.params);
+    if (!parsedParams.success) {
+        return res.status(400).json({ message: "Invalid request: groupId is required" });
+    }
+    const { groupId } = parsedParams.data;
+
     const auditLog = await floorService.getAudit(groupId);
     return res.json({ audit: auditLog });
 });

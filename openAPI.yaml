@@ -4,7 +4,7 @@ info:
   description: An API for managing a "floor" in a push-to-talk radio group system.
   version: 1.0.0
 servers:
-  - url: http://localhost:8080
+  - url: http://localhost:8080 or http://localhost:30080
     description: Local dev server
 
 paths:

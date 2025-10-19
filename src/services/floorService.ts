@@ -1,7 +1,5 @@
-type FloorState = {
-    userId: string;
-    priority: number;
-};
+import { type UserRequest } from '../schemas/userRequestSchema.js';
+
 
 type FloorAuditEntry = {
     userId: string;
@@ -12,11 +10,12 @@ type FloorAuditEntry = {
 const TimeToExpire = 10000;
 
 class FloorService {
-    private floors: Map<string, FloorState> = new Map();
+    private floors: Map<string, UserRequest> = new Map();
     private auditLog: Map<string, FloorAuditEntry[]> = new Map();
     private timers: Map<string, NodeJS.Timeout> = new Map();
     
-    async obtainFloor(groupId: string, userId: string, priority: number = 0) {
+    async obtainFloor(groupId: string, user: UserRequest) {
+        const { userId, priority = 1 } = user;
         const currentFloor = this.floors.get(groupId);
 
         if (!currentFloor) {
@@ -38,10 +37,10 @@ class FloorService {
             };
         }
 
-        if (priority > currentFloor.priority) {
+        if (priority > (currentFloor.priority ?? 1) ) {
             // New request has higher priority → preempt current holder
             this.floors.set(groupId, { userId, priority });
-            console.log(`Floor preempted: ${userId} replaced ${currentFloor.userId} on group ${groupId}`);
+            //console.log(`Floor preempted: ${userId} replaced ${currentFloor.userId} on group ${groupId}`);
             this.logAudit(groupId, { userId, action: "preempted", timestamp: new Date().toISOString() });
             this.floorTimer(groupId, userId, TimeToExpire);
             return {
